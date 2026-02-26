@@ -8,3 +8,5 @@ results/
 .venv/
 venv/
 .env
+
+Report.pdf
