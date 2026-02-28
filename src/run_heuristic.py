@@ -1,25 +1,43 @@
 from __future__ import annotations
 
+import argparse
 import time
 from pathlib import Path
 
-from core import compute_distance_matrix, load_instance_from_txt, pad_routes_to_m, print_heuristic_solution
-from heuristic_deterministic import solve_deterministic
+from utilis import compute_distance_matrix, load_instance_from_txt
+from heuristic_deterministic import solve_deterministic, print_heuristic_solution
+
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="Run the deterministic heuristic on a single instance.")
+    p.add_argument(
+        "--instance",
+        type=str,
+        default="instances/p4.3.b.txt",
+        help="Path to the instance .txt file (default: instances/p4.3.b.txt).",
+    )
+    p.add_argument(
+        "--grid-search-alpha",
+        action="store_true",
+        help="Enable grid-search for alpha in the savings-based construction.",
+    )
+    return p.parse_args()
 
 
 def main() -> None:
-    filepath = Path("instances/p4.3.b.txt")
+    args = parse_args()
+
+    filepath = Path(args.instance)
     inst = load_instance_from_txt(filepath)
     t = compute_distance_matrix(inst.coords)
 
     t0 = time.perf_counter()
-    routes = solve_deterministic(inst, grid_search_alpha=True)
+    routes = solve_deterministic(inst, grid_search_alpha=args.grid_search_alpha)
     elapsed = time.perf_counter() - t0
 
-    # show exactly m routes
-    routes = pad_routes_to_m(routes, inst.m)
+    print_heuristic_solution(routes, inst, t=t)
+    print(f"Time (s): {elapsed:.3f} s")
 
-    print_heuristic_solution(routes, inst, t=t, title="Algorithm: Heuristic")
 
 if __name__ == "__main__":
     main()

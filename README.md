@@ -1,66 +1,92 @@
-# Electric trucks routing with deterministic and stochastic travel times
+# Team Orienteering -- Deterministic Heuristic and Simheuristic
 
-This repository contains a solution to an orienteering-style routing problem for a fleet of electric trucks.
-It includes:
-- a deterministic heuristic (savings construction + 2-opt + reinsertion + swaps)
-- an exact MILP benchmark (MTZ) for small instances (PuLP)
-- a stochastic simheuristic using Monte Carlo evaluation and a reliability threshold
+This repository implements a deterministic heuristic and a stochastic
+simheuristic for a multi-vehicle Team Orienteering Problem (TOP) with
+depot-to-depot routes and time budget constraints.
 
-## Requirements
+The project is intentionally kept minimal and focused on the algorithmic
+components.
 
-Python 3.10+ recommended.
+------------------------------------------------------------------------
 
-Install dependencies:
+## Project Structure
 
-```bash
-pip install -r requirements.txt
+    .
+    ├── utilis.py
+    ├── heuristic_deterministic.py
+    ├── simheuristic.py
+    ├── run_heuristic.py
+    ├── run_simheuristic.py
+    ├── instances/
+    │   ├── p4.2.b.txt
+    │   ├── p4.2.h.txt
+    │   ├── ...
+    └── README.md
+
+### Main Components
+
+-   **utilis.py**
+    -   Data structures: `Instance`, `Route`
+    -   Distance matrix computation
+    -   Route metrics (length, reward, visited silos)
+    -   Padding to exactly `m` routes
+    -   Safety checks (no revisits)
+-   **heuristic_deterministic.py**
+    -   Savings-based construction (with optional RECOMENDED grid search on
+        `alpha`)
+    -   Intra-route 2-opt
+    -   Greedy reinsertion
+    -   Replacement swaps
+    -   Formatted solution printing
+-   **simheuristic.py**
+    -   Lognormal calibration of travel times
+    -   Randomized Top-L reinsertion and replacement
+    -   Multi-start candidate generation
+    -   Monte Carlo evaluation
+    -   Reliability-aware selection rule
+-   **run_heuristic.py**
+    -   Runs the deterministic heuristic on a single instance.
+-   **run_simheuristic.py**
+    -   Runs the simheuristic on a single instance with configurable stochastic parameters.
+
+------------------------------------------------------------------------
+
+## How to Run
+
+### Deterministic Heuristic
+
+``` bash
+python run_heuristic.py --instance instances/p4.3.b.txt --grid-search-alpha
 ```
 
-**Solver note (MILP):** the code uses PuLP. It tries to use the HiGHS solver if available, and falls back to CBC otherwise.
+Options: - `--instance` : path to instance file - `--grid-search-alpha`
+: enables alpha grid search in savings construction
 
-## Instances
+------------------------------------------------------------------------
 
-Input instances are stored in the `instances/` folder and follow this format:
+### Simheuristic
 
-- `n <int>`
-- `m <int>`
-- `tmax <float>`
-- then one line per node: `x  y  reward`
-
-Node `0` represents the depot.
-
-## How to run
-
-All commands must be executed from the repository root.
-
-### 1) Stochastic comparison (Heuristic + MC vs Simheuristic)
-
-This script:
-- builds a deterministic heuristic solution
-- evaluates it under uncertainty via Monte Carlo
-- runs the simheuristic
-- exports CSV and LaTeX tables
-
-```bash
-python src/compare_simheuristic_vs_det_eval.py
+``` bash
+python run_simheuristic.py --instance instances/p4.2.b.txt --grid-search-alpha
 ```
 
-Outputs are automatically saved in the `results/` folder.
+Key parameters: - `--alpha` : savings weight (ignored if grid search
+enabled) - `--c` : variability parameter for lognormal travel times -
+`--K` : number of multi-start candidates - `--L-top` : Top-L parameter
+for randomized move selection - `--N` : Monte Carlo sample size -
+`--beta` : reliability threshold
 
-### 2) Deterministic comparison (Heuristic vs MILP)
+------------------------------------------------------------------------
 
-```bash
-python src/compare_heuristic_vs_MILP.py
-```
+## Modeling Conventions
 
-### 3) Run the simheuristic on a single instance
-
-```bash
-python src/run_simheuristic.py
-```
-
-### 4) Run the heuristic on a single instance
-
-```bash
-python src/run_heuristic.py
-```
+-   The depot is node `0`.
+-   `Route.silos` does not include the depot; the depot is implicitly
+    added when building explicit sequences.
+-   Each silo can be visited at most once across all routes.
+-   Solutions are padded to exactly `m` routes for reporting
+    consistency.
+-   In the stochastic setting, travel times follow a lognormal
+    distribution calibrated from deterministic distances.
+-   Reliability is computed as the average success rate across all
+    trucks.

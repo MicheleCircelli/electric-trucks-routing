@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from math import inf, log, sqrt
 from typing import Dict, List, Optional, Set, Tuple
 import random
 
-from core import (
-    Instance, Route, 
+from utilis import (
+    Instance, Route,
     Node,
-    MCResult, SimheuristicResult, 
-    compute_distance_matrix, 
-    route_length, route_reward, 
-    pad_routes_to_m
+    MCResult, SimheuristicResult,
+    compute_distance_matrix,
+    route_length, route_reward,
+    pad_routes_to_m,
+    visited_silos,
+    total_reward,
+    count_nonempty_routes,
+    assert_no_revisits,
 )
 from heuristic_deterministic import (
     savings_construction,
@@ -202,7 +205,7 @@ def build_candidate_solution(
     routes = [two_opt_first_improvement(r, t, inst.Tmax) for r in routes]
 
     # unvisited
-    visited = set().union(*(r.visited_set() for r in routes)) if routes else set()
+    visited = visited_silos(routes)
     unvisited = set(range(1, inst.n + 1)) - visited
     unvisited = {i for i in unvisited if t[0][i] + t[i][0] <= inst.Tmax}
 
@@ -212,12 +215,11 @@ def build_candidate_solution(
         routes, unvisited = randomized_replacement_topL(routes, unvisited, t, inst.reward, inst.Tmax, L_top, rng)
 
     # Ensure exactly m routes (paper-style: a solution is a set of m routes)
-    if len(routes) < inst.m:
-        routes = routes + [Route([]) for _ in range(inst.m - len(routes))]
-    elif len(routes) > inst.m:
-        routes = routes[: inst.m]
+    routes = pad_routes_to_m(routes, inst.m)
 
-    return pad_routes_to_m(routes, inst.m)
+    assert_no_revisits(routes, inst)
+
+    return routes
 
 # Monte Carlo evaluation of the candidate
 def evaluate_solution_mc(
@@ -237,10 +239,7 @@ def evaluate_solution_mc(
         raise ValueError("N must be >= 1")
 
     # Ensure exactly m routes
-    if len(routes) < inst.m:
-        routes = routes + [Route([]) for _ in range(inst.m - len(routes))]
-    elif len(routes) > inst.m:
-        routes = routes[: inst.m]
+    routes = pad_routes_to_m(routes, inst.m)
 
     # Precompute route arcs and deterministic rewards
     arc_lists: List[List[Tuple[int, int]]] = []
@@ -497,3 +496,43 @@ def solve_stochastic_simheuristic(
     if feasible:
         return max(feasible, key=lambda r: (r.F_hat, r.R_hat))
     return max((r for (_a, r) in results), key=lambda r: (r.R_hat, r.F_hat))
+
+# Printing the solution
+def print_simheuristic_solution(
+    routes: List[Route],
+    inst: Instance,
+    F_hat: float,
+    R_hat: float,
+    p_hat: Optional[List[float]] = None,
+    t: Optional[List[List[float]]] = None,
+) -> None:
+    if t is None:
+        t = compute_distance_matrix(inst.coords)
+
+    assert_no_revisits(routes, inst)
+
+    routes_m = pad_routes_to_m(routes, inst.m)
+
+    vis = visited_silos(routes_m)
+    rew = total_reward(routes_m, inst.reward)
+
+    print("=== Simheuristic Solution ===")
+    print(f"E[Reward]: {F_hat:.2f}")
+    print(f"Reliability: {R_hat:.4f}")
+    print(f"Silos visited: {len(vis)} / {inst.n}")
+    print(f"Total reward: {rew:.3f}")
+    print(f"Nonempty routes: {count_nonempty_routes(routes_m)} / {inst.m}")
+    print("Routes:")
+
+    for k, r in enumerate(routes_m, start=1):
+        seq = r.as_sequence()
+        seq_str = " -> ".join(map(str, seq))
+        L = route_length(r, t)
+        slack = inst.Tmax - L
+        rr = route_reward(r, inst.reward)
+
+        extra = ""
+        if p_hat is not None and (k - 1) < len(p_hat):
+            extra = f" | p_success={p_hat[k - 1]:.4f}"
+
+        print(f"  Truck {k}: {seq_str} | length={L:.3f} | slack={slack:.3f} | reward={rr:.3f}{extra}")

@@ -1,12 +1,20 @@
 __pycache__/
 *.pyc
 
-results/
-*.csv
-*.tex
+requirements.txt
 
+# Environments
 .venv/
 venv/
 .env
 
-Report.pdf
+# Outputs
+results/
+*.csv
+*.tex
+*.pdf
+
+# Compare scripts
+compare_simheuristic_vs_det_eval.py
+compare_heuristic_vs_MILP.py
+MILP_model.py
