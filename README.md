@@ -11,17 +11,16 @@ components.
 
 ## Project Structure
 
-    .
-    ├── utilis.py
-    ├── heuristic_deterministic.py
-    ├── simheuristic.py
-    ├── run_heuristic.py
-    ├── run_simheuristic.py
-    ├── instances/
-    │   ├── p4.2.b.txt
-    │   ├── p4.2.h.txt
-    │   ├── ...
-    └── README.md
+.
+├── src/
+│   ├── utilis.py
+│   ├── heuristic_deterministic.py
+│   ├── simheuristic.py
+│   ├── run_heuristic.py
+│   └── run_simheuristic.py
+├── instances/
+│   ├── ...
+└── README.md
 
 ### Main Components
 
@@ -56,7 +55,7 @@ components.
 ### Deterministic Heuristic
 
 ``` bash
-python run_heuristic.py --instance instances/p4.3.b.txt --grid-search-alpha
+python src/run_heuristic.py --instance instances/p4.3.b.txt --grid-search-alpha
 ```
 
 Options: - `--instance` : path to instance file - `--grid-search-alpha`
@@ -67,7 +66,7 @@ Options: - `--instance` : path to instance file - `--grid-search-alpha`
 ### Simheuristic
 
 ``` bash
-python run_simheuristic.py --instance instances/p4.2.b.txt --grid-search-alpha
+python src/run_simheuristic.py --instance instances/p4.2.b.txt --grid-search-alpha
 ```
 
 Key parameters: - `--alpha` : savings weight (ignored if grid search

@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 
 requirements.txt
+instances/p4.4.b_modified.txt
 
 # Environments
 .venv/
