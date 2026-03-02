@@ -11,16 +11,24 @@ components.
 
 ## Project Structure
 
+```
 .
-├── src/
-│   ├── utilis.py
-│   ├── heuristic_deterministic.py
-│   ├── simheuristic.py
-│   ├── run_heuristic.py
-│   └── run_simheuristic.py
-├── instances/
-│   ├── ...
-└── README.md
+├─ src/
+│  ├─ utilis.py
+│  ├─ heuristic_deterministic.py
+│  ├─ simheuristic.py
+│  ├─ run_heuristic.py
+│  └─ run_simheuristic.py
+├─ instances/
+│  ├─ p4.2.a.txt
+│  ├─ p4.2.b.txt
+│  ├─ p4.3.a.txt
+│  └─ ...
+├─ .gitignore
+└─ README.md
+```
+
+------------------------------------------------------------------------
 
 ### Main Components
 
